@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/mvc
+       http://www.springframework.org/schema/mvc/spring-mvc.xsd
+       http://www.springframework.org/schema/context
+       https://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+    <!--注解支持-->
+    <context:component-scan base-package="com.devil"/>
+
+    <!--注解驱动 @RequestMapping("/test")等-->
+    <mvc:annotation-driven/>
+
+    <!--1.关联数据库配置文件-->
+    <context:property-placeholder location="classpath:database.properties"/>
+
+    <!--2.连接池
+            dbcp:半自动化操作，手动连接
+            c3p0:自动化操作，自动化的加载配置文件，并且可以自动设置到对象中
+    -->
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="${jdbc.driver}"/>
+        <property name="url" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+    </bean>
+
+    <!--3.sqlSessionFactory-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <!--绑定配置文件-->
+        <property name="configLocation" value="classpath:mybatis-config.xml"/>
+    </bean>
+
+    <!--4.配置到接口扫描包，动态实现Dao接口可以注入到Spring容器中 -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <!--注入sqlSessionFactory-->
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+        <!--扫描dao接口-->
+        <property name="basePackage" value="com.devil.dao"/>
+    </bean>
+
+<!--    声明式事务-->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+<!--        注入数据库-->
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+<!--    注解事务，添加transactionManager 注解属性-->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+
+    <!--静态资源过滤-->
+    <mvc:default-servlet-handler/>
+
+    <!--视图解析器-->
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/WEB-INF/html/"/>
+        <property name="suffix" value=".html"/>
+    </bean>
+</beans>
